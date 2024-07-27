@@ -1,4 +1,5 @@
-// use rand::{distributions::Uniform, prelude::*};
+use log::{debug, error, info, warn};
+use log4rs;
 
 use crossterm::{
     cursor,
@@ -48,9 +49,11 @@ struct App {
 
 impl App {
     fn new() -> Self {
+        info!("Start a new app ...");
         let mut s = Self { pipes: vec![] };
 
         for i in 1..3 {
+            info!("Add pipe number {:?}", i);
             let mut p = VecDeque::new();
             let start = Point {
                 x: i * 3,
@@ -60,6 +63,7 @@ impl App {
             p.push_front(start);
 
             let p = Pipe::new(p, start, (10) as usize);
+            debug!("Push new  pipe {i} {:?}", &p);
             s.pipes.push(p);
         }
 
@@ -83,6 +87,7 @@ impl App {
                         .queue(cursor::Hide)?;
 
                     if p.hidden {
+                        info!("hidden point");
                         continue;
                     }
 
@@ -120,7 +125,11 @@ impl App {
 }
 
 fn main() -> io::Result<()> {
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+
     let mut app = App::new();
+    info!(">>>>> booting up");
+    warn!(">>>>> booting up");
     app.run()?;
 
     Ok(())
