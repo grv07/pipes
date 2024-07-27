@@ -99,7 +99,7 @@ impl App {
 
                 if let Some(head) = pipe.points.front() {
                     let mut head = head.clone();
-                    head.1 += 1;
+                    head.y += 1;
 
                     if !pipe.pipe_hit_border(size, &head) {
                         pipe.points.push_front(head);
