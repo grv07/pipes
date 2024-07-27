@@ -12,7 +12,14 @@ use std::{
     time::Duration,
 };
 
-type Point = (u16, u16);
+#[derive(Copy, Clone, Debug)]
+struct Point {
+    x: u16,
+    y: u16,
+    hidden: bool,
+}
+
+// type Point = (u16, u16);
 
 #[derive(Clone, Debug)]
 struct Pipe {
@@ -30,8 +37,8 @@ impl Pipe {
         }
     }
 
-    fn pipe_hit_border(&mut self, size: Point, head: &Point) -> bool {
-        size.0 <= head.0 || size.1 <= head.1
+    fn pipe_hit_border(&mut self, size: (u16, u16), head: &Point) -> bool {
+        size.0 <= head.x || size.1 <= head.y
     }
 }
 
@@ -45,8 +52,12 @@ impl App {
 
         for i in 1..3 {
             let mut p = VecDeque::new();
-            let start = (i * 3, 0);
-            p.push_front((start.0, start.1));
+            let start = Point {
+                x: i * 3,
+                y: 0,
+                hidden: false,
+            };
+            p.push_front(start);
 
             let p = Pipe::new(p, start, (10) as usize);
             s.pipes.push(p);
@@ -68,8 +79,12 @@ impl App {
                 for (i, p) in pipe.points.iter().enumerate() {
                     let mut stdout = stdout();
                     let q = stdout
-                        .queue(cursor::MoveTo(p.0, p.1))?
+                        .queue(cursor::MoveTo(p.x, p.y))?
                         .queue(cursor::Hide)?;
+
+                    if p.hidden {
+                        continue;
+                    }
 
                     if i == 0 {
                         q.queue(style::PrintStyledContent("●".dark_green()))?;
