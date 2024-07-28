@@ -5,24 +5,8 @@ appenders:
     path: "log/file.log"
     encoder:
         pattern: "[{d(%Y-%m-%dT%H:%M:%S%.6f)} {h({l}):<5.5} {M}] {m}{n}"
-  # stdout:
-  #   kind: console
-  # requests:
-  #   kind: file
-  #   path: "log/requests.log"
-  #   encoder:
-  #     pattern: "{d} - {m}{n}"
 root:
-  level: warn
+  level: info
   appenders:
     - file
-# loggers:
-  # app::backend::db:
-  #   level: info
-  # app::requests:
-  #   level: info
-  #   appenders:
-  #     - requests
-  #     - file
-  #   additive: false
 
