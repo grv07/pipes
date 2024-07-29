@@ -17,26 +17,27 @@ use std::{
 struct Point {
     x: u16,
     y: u16,
-    // hidden: bool,
 }
 
-// type Point = (u16, u16);
+#[derive(Clone, Debug)]
+struct Message {
+    msg_vd: VecDeque<char>,
+    lp: usize,
+}
 
 #[derive(Clone, Debug)]
 struct Pipe {
-    points: VecDeque<Point>,
-    length: usize,
-    start_point: Point,
-    msg: String,
+    msg: Message,
+    head: Point,
 }
 
 impl Pipe {
-    fn new(points: VecDeque<Point>, start: Point, length: usize, msg: String) -> Self {
+    fn new(head: Point, msg: String) -> Self {
+        let msg_vd = VecDeque::from_iter(msg.chars());
+        // info!(" ==== {msg_vd:?}");
         Self {
-            points,
-            length,
-            start_point: start,
-            msg,
+            head,
+            msg: Message { msg_vd, lp: 0 },
         }
     }
 
@@ -59,18 +60,14 @@ impl App {
         };
         info!("terminal size is: {:?}", &size);
 
-        for i in 10..s.size.1 {
+        // TODO: Calculate correct size ..
+        for i in 3..50 {
+            // for i in 1..2 {
             info!("Add pipe number {:?}", i);
 
-            let mut p = VecDeque::new();
-            let start = Point {
-                x: i * 3,
-                y: 0,
-                // hidden: false,
-            };
-            p.push_front(start);
+            let start = Point { x: i * 3, y: 0 };
 
-            let p = Pipe::new(p, start, 30, msg.clone());
+            let p = Pipe::new(start, msg.clone());
 
             debug!("Push new  pipe {i} {:?}", &p);
 
@@ -87,38 +84,35 @@ impl App {
             stdout().queue(terminal::Clear(terminal::ClearType::FromCursorUp))?;
 
             for pipe in self.pipes.iter_mut() {
-                let msg = pipe.msg.split_whitespace().fold(String::new(), |acc, e| {
-                    let e: String = e.chars().rev().collect();
-                    format!("{acc} {e}")
-                });
+                let mut cr = 0;
+                let mut head_y: i16 = (pipe.head.y) as i16;
 
-                // info!("pipes generated msg {}", msg);
-
-                for (p, m) in pipe.points.iter().zip(msg.chars()) {
-                    let mut stdout = stdout();
-                    let q = stdout
-                        .queue(cursor::MoveTo(p.x, p.y))?
-                        .queue(cursor::Hide)?;
-                    q.queue(style::PrintStyledContent(m.dark_green()))?;
-                }
-
-                if pipe.points.len() > pipe.length {
-                    pipe.points.pop_back();
-                }
-
-                if let Some(head) = pipe.points.front() {
-                    let mut head = head.clone();
-                    head.y += 1;
-
-                    if !pipe.pipe_hit_border(self.size, &head) {
-                        pipe.points.push_front(head);
-                    } else {
-                        pipe.points.pop_back();
-
-                        if pipe.points.is_empty() {
-                            pipe.points.push_front(pipe.start_point);
-                        }
+                while head_y >= 0 {
+                    if let Some(m) = pipe.msg.msg_vd.get(cr + pipe.msg.lp) {
+                        let mut stdout = stdout();
+                        let q = stdout
+                            .queue(cursor::MoveTo(pipe.head.x, head_y as u16))?
+                            .queue(cursor::Hide)?;
+                        q.queue(style::PrintStyledContent(m.dark_green()))?;
                     }
+
+                    head_y -= 1;
+                    cr += 1;
+                }
+
+                let h = pipe.head;
+
+                if !pipe.pipe_hit_border(self.size, &h) {
+                    pipe.head.y += 1;
+                } else {
+                    pipe.msg.lp += 1;
+                }
+
+                // info!("lp {:?}, len: {:?}", pipe.msg.lp, pipe.msg.msg_vd.len());
+
+                if pipe.msg.lp >= pipe.msg.msg_vd.len() {
+                    pipe.head.y = 0;
+                    pipe.msg.lp = 0;
                 }
             }
 
@@ -130,6 +124,11 @@ impl App {
 
 fn main() -> io::Result<()> {
     let msg = "This is my msg that will run".to_string();
+
+    let msg = msg.split_whitespace().fold(String::new(), |acc, e| {
+        let e: String = e.chars().rev().collect();
+        format!("{acc} {e}")
+    });
 
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
 
