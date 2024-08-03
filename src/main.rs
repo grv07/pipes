@@ -34,7 +34,7 @@ struct Pipe {
 impl Pipe {
     fn new(head: Point, msg: String) -> Self {
         let msg_vd = VecDeque::from_iter(msg.chars());
-        // info!(" ==== {msg_vd:?}");
+
         Self {
             head,
             msg: Message { msg_vd, lp: 0 },
@@ -60,9 +60,7 @@ impl App {
         };
         info!("terminal size is: {:?}", &size);
 
-        // TODO: Calculate correct size ..
-        for i in 3..50 {
-            // for i in 1..2 {
+        for i in 1..size.0 / 3 {
             info!("Add pipe number {:?}", i);
 
             let start = Point { x: i * 3, y: 0 };
@@ -133,6 +131,7 @@ fn main() -> io::Result<()> {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
 
     let size = terminal::size()?;
+
     let mut app = App::new(size, msg);
     app.run()?;
 
