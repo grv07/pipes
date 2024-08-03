@@ -1,8 +1,8 @@
 use log::{debug, info};
-use log4rs;
 
 use crossterm::{
     cursor,
+    event::{self, read, Event, KeyCode, KeyEvent, KeyModifiers, ModifierKeyCode},
     style::{self, Stylize},
     terminal, QueueableCommand,
 };
@@ -79,6 +79,17 @@ impl App {
         stdout().queue(terminal::Clear(terminal::ClearType::All))?;
 
         loop {
+            if event::poll(Duration::from_millis(100))? {
+                if let Event::Key(key_event) = event::read()? {
+                    if key_event.code == KeyCode::Esc
+                        || (key_event.code == KeyCode::Char('c')
+                            && key_event.modifiers == KeyModifiers::CONTROL)
+                    {
+                        break Ok(());
+                    }
+                }
+            }
+
             stdout().queue(terminal::Clear(terminal::ClearType::FromCursorUp))?;
 
             for pipe in self.pipes.iter_mut() {
@@ -88,9 +99,7 @@ impl App {
                 while head_y >= 0 {
                     if let Some(m) = pipe.msg.msg_vd.get(cr + pipe.msg.lp) {
                         let mut stdout = stdout();
-                        let q = stdout
-                            .queue(cursor::MoveTo(pipe.head.x, head_y as u16))?
-                            .queue(cursor::Hide)?;
+                        let q = stdout.queue(cursor::MoveTo(pipe.head.x, head_y as u16))?;
                         q.queue(style::PrintStyledContent(m.dark_green()))?;
                     }
 
@@ -132,8 +141,14 @@ fn main() -> io::Result<()> {
 
     let size = terminal::size()?;
 
+    terminal::enable_raw_mode()?;
+
     let mut app = App::new(size, msg);
+
     app.run()?;
+
+    terminal::disable_raw_mode()?;
+    stdout().queue(cursor::Show)?;
 
     Ok(())
 }
