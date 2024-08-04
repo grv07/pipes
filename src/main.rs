@@ -2,7 +2,7 @@ use log::{debug, info};
 
 use crossterm::{
     cursor,
-    event::{self, read, Event, KeyCode, KeyEvent, KeyModifiers, ModifierKeyCode},
+    event::{self, Event, KeyCode, KeyModifiers},
     style::{self, Stylize},
     terminal, QueueableCommand,
 };
@@ -141,6 +141,7 @@ fn main() -> io::Result<()> {
 
     let size = terminal::size()?;
 
+    stdout().queue(cursor::Hide)?;
     terminal::enable_raw_mode()?;
 
     let mut app = App::new(size, msg);
